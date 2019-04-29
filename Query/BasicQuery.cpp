@@ -35,8 +35,10 @@ BasicQuery::clear()
         delete[] this->edge_nei_id[i];
         delete[] this->edge_pre_id[i];
         delete[] this->edge_type[i];
+		if (this->filled_candidate_list[i] != NULL)
+			delete filled_candidate_list[i];
     }
-
+	delete[] filled_candidate_list;
     //delete[] this->edge_sig;
     delete[] this->edge_id;
     delete[] this->edge_nei_id;
@@ -66,6 +68,93 @@ BasicQuery::clear()
         delete[] this->result_list[i];
         this->result_list[i] = NULL;
     }    
+}
+
+void 
+BasicQuery::fillVarCand(const string &_var, const vector<unsigned> &_id_list)
+{
+	int _var_id = getIDByVarName(_var);
+	if (isSatelliteInJoin(_var_id)) 
+		retrun;
+	this->filled_candidate_list[_var_id] = new IDList();
+	this->filled_candidate_list[_var_id]->copy(_id_list);
+
+}
+void 
+BasicQuery::fillVarCand(int _var_id, const IDList* _id_list)
+{
+	if (isSatelliteInJoin(_var_id)) 
+		retrun;
+	this->filled_candidate_list[_var_id] = new IDList();
+	this->filled_candidate_list[_var_id]->copy(_id_list);
+
+}
+void 
+BasicQuery::fillVarCand(int _var_id, const vector<unsigned> &_id_list)
+{
+	if (isSatelliteInJoin(_var_id)) 
+		retrun;
+	this->filled_candidate_list[_var_id] = new IDList;
+	cout << this->filled_candidate_list[_var_id] << endl;
+	this->filled_candidate_list[_var_id]->copy(_id_list);
+	
+}
+
+IDList* 
+BasicQuery::fetchVarCand(int _var_id)
+{
+	return this->filled_candidate_list[_var_id];
+}
+
+
+void 
+BasicQuery::determine_prefilled_var(int _var_id)
+{
+	cout<<"determine_prefilled_var " << _var_id <<"size = "<<this->getCandidateList(_var_id).size() << endl;
+	if (this->filled_candidate_list[_var_id] == NULL)
+		return;
+	// if this is handled in pre filther we should neglect it
+	if (this->isReady(_var_id))
+		return;
+	cout << "determine_prefilled_var" << _var_id << endl;
+	// if we should add it into candidate set before join
+	bool begin_or_end = true;
+	/*
+	the process to calculate var begin_or_end
+	*/
+	if (begin_or_end == true)
+	{
+		//literal_candidate_list.unionList(this_edge_literal_list);
+		IDList &t = getCandidateList(_var_id);
+		t.copy(filled_candidate_list[_var_id]);
+		// to add into the candidate
+		this->setReady(_var_id);
+		delete this->filled_candidate_list[_var_id];
+		this->filled_candidate_list[_var_id] = NULL;
+	}
+	else
+	{
+		/*leave the candidate at the end of join*/
+	}
+}
+
+void 
+BasicQuery::after_main_join()
+{
+	for (int i = 0; i < BasicQuery::MAX_VAR_NUM; ++i)
+	{
+		if (this->filled_candidate_list[i] != NULL)
+		{
+			IDList &t = getCandidateList(i);
+			//cout << "candidate size=" << t.size() << endl;
+			t.intersectList(*filled_candidate_list[i]);
+			//cout << "id[" << i << "] intersected" << endl;
+			cout << "candidate size = " << t.size() <<" i = "<<i<< endl;
+			cout << "candidate size = " << getCandidateList(i).size() << endl;
+			delete this->filled_candidate_list[i];
+			this->filled_candidate_list[i] = NULL;
+		}
+	}
 }
 
 int
@@ -376,6 +465,20 @@ BasicQuery::updateSubSig(int _sub_var_id, TYPE_PREDICATE_ID _pre_id, TYPE_ENTITY
     this->var_degree[_sub_var_id] ++;
 }
 
+void
+BasicQuery::updatePreSig(int _pre_var_id, TYPE_ENTITY_LITERAL_ID _sub_id, TYPE_ENTITY_LITERAL_ID _obj_id, int _line_id, int _sub_var_id ,int _obj_var_id)
+{
+	cout << "pre var id: " << _pre_var_id << endl;
+	// update var(sub)_degree & edge_id according to this triple
+	int pre_degree = this->var_degree[_pre_var_id];
+	// edge_id[var_id][i] : the ID of the i-th edge of the var
+	this->edge_id[_pre_var_id][pre_degree] = _line_id;
+	this->edge_nei_id[_pre_var_id][pre_degree] = -1;
+	this->edge_type[_pre_var_id][pre_degree] = Util::EDGE_PRE;
+	this->edge_pre_id[_pre_var_id][pre_degree] = -1;
+	this->var_degree[_pre_var_id] ++;
+}
+
 void 
 BasicQuery::updateObjSig(int _obj_var_id, TYPE_PREDICATE_ID _pre_id, TYPE_ENTITY_LITERAL_ID _sub_id, int _line_id, int _sub_var_id)
 {
@@ -518,15 +621,15 @@ BasicQuery::encodeBasicQuery(KVstore* _p_kvstore, const vector<string>& _query_v
 
     this->candidate_list = new IDList[this->graph_var_num];
 
-    for(unsigned i = 0; i < this->triple_vt.size(); i ++)
-    {
-        string& sub = this->triple_vt[i].subject;
-        string& pre = this->triple_vt[i].predicate;
-        string& obj = this->triple_vt[i].object;
+	for (unsigned i = 0; i < this->triple_vt.size(); i++)
+	{
+		string& sub = this->triple_vt[i].subject;
+		string& pre = this->triple_vt[i].predicate;
+		string& obj = this->triple_vt[i].object;
 
 		//int pre_id = -1;    //not found
 		TYPE_PREDICATE_ID pre_id = INVALID_PREDICATE_ID;    //not found
-		if(pre[0] == '?')   //pre var
+		if (pre[0] == '?')   //pre var
 		{
 			pre_id = -2;   //mark that this is a pre var
 		}
@@ -540,28 +643,38 @@ BasicQuery::encodeBasicQuery(KVstore* _p_kvstore, const vector<string>& _query_v
 				//Util::logging(_ss.str());
 			}
 		}
-		if(pre_id == -1)
+		if (pre_id == -1)
 		{
 			cout << "invalid query because the pre is not found: " << pre << endl;
 			return false;
 		}
 
-        int sub_var_id = -1;
-        int obj_var_id = -1;
-        // -1 if not found, this means this subject is a constant
+		int pre_var_id = -1;
+		int sub_var_id = -1;
+		int obj_var_id = -1;
+		// -1 if not found, this means this subject is a constant
+
+		map<string, int>::iterator _find_pre_itr = (this->var_str2id).find(pre);
+		if (_find_pre_itr != this->var_str2id.end())
+		{
+			pre_var_id = _find_pre_itr->second;
+		}
         map<string, int>::iterator _find_sub_itr = (this->var_str2id).find(sub);
         if(_find_sub_itr != this->var_str2id.end())
         {
             sub_var_id = _find_sub_itr->second;
         }
-
-        // -1 if not found, this means this object is a constant(string)
         map<string, int>::iterator _find_obj_itr = (this->var_str2id).find(obj);
         if(_find_obj_itr != this->var_str2id.end())
         {
             obj_var_id = _find_obj_itr->second;
         }
 
+		bool pre_is_var = (pre_var_id != -1);
+		if (pre_is_var)
+		{
+			this->updatePreSig(pre_var_id, -1, -1, i, -1);
+		}
         // sub is either a var or a string
         bool sub_is_var = (sub_var_id != -1);
         if(sub_is_var)
@@ -844,6 +957,10 @@ BasicQuery::initial()
 
     //this->is_literal_candidate_added = new bool[BasicQuery::MAX_VAR_NUM];
     this->ready = new bool[BasicQuery::MAX_VAR_NUM];
+
+	this->filled_candidate_list = new IDList*[BasicQuery::MAX_VAR_NUM];
+
+
     this->need_retrieve = new bool[BasicQuery::MAX_VAR_NUM];
 
     for(int i = 0; i < BasicQuery::MAX_VAR_NUM; ++i)
@@ -854,7 +971,7 @@ BasicQuery::initial()
         //this->is_literal_candidate_added[i] = false;
 		this->ready[i] = false;
         this->need_retrieve[i] = false;
-
+		this->filled_candidate_list[i] = NULL;
         //this->edge_sig[i] = new EdgeBitSet[BasicQuery::MAX_VAR_NUM];
         this->edge_id[i] = new int[BasicQuery::MAX_VAR_NUM];
         this->edge_nei_id[i] = new int[BasicQuery::MAX_VAR_NUM];
@@ -899,6 +1016,28 @@ void BasicQuery::addInVarNotInSelect()
                 }
             }
         }
+
+		string& pre = this->triple_vt[i].predicate;
+		if (pre.at(0) == '?')
+		{
+			if (this->pre_so_point.find(pre) != this->pre_so_point.end())
+			{
+				map<string, int>::iterator find_pre_itr = this->var_str2id.find(pre);
+				bool not_var_yet = (find_pre_itr == this->var_str2id.end());
+				if (not_var_yet)
+				{
+					this->total_var_num++;
+					int _freq = this->tuple2freq[pre];
+					// so the var str must occur more than once
+					if (_freq > 1)
+					{
+						this->var_str2id[pre] = _v_n_i_s_next_id;
+						this->var_name[_v_n_i_s_next_id] = pre;
+						_v_n_i_s_next_id++;
+					}
+				}
+			}
+		}
 
         string& obj = this->triple_vt[i].object;
         if(obj.at(0) == '?')
@@ -961,6 +1100,14 @@ BasicQuery::findVarNotInSelect()
 void 
 BasicQuery::buildTuple2Freq()
 {
+
+	set<string> pre_string_now;
+	vector<Triple>::iterator itr_pre = this->triple_vt.begin();
+	while (itr_pre != this->triple_vt.end())
+	{
+		pre_string_now.insert(_t.predicate);
+	}
+
     vector<Triple>::iterator itr = this->triple_vt.begin();
     bool not_found = false;
     int _freq = 0;
@@ -978,6 +1125,8 @@ BasicQuery::buildTuple2Freq()
             _freq = this->tuple2freq[_t.subject];
             this->tuple2freq[_t.subject] = _freq + 1;
         }
+		if (pre_string_now.count(_t.subject) != 0)
+			pre_so_point.insert(_t.subject);
         // pre tuple
         not_found = (this->tuple2freq.find(_t.predicate) == this->tuple2freq.end());
         if(not_found)
@@ -1001,6 +1150,8 @@ BasicQuery::buildTuple2Freq()
             _freq = this->tuple2freq[_t.object];
             this->tuple2freq[_t.object] = _freq + 1;
         }
+		if (pre_string_now.count(_t.object) != 0)
+			pre_so_point.insert(_t.object);
         itr++;
     }
 }
@@ -1202,4 +1353,11 @@ string BasicQuery::to_str()
 
     return _ss.str();
 }
-
+bool 
+BasicQuery::isVarBothPre_so(int _var)
+{
+	string name = this->var_name[_var];
+	if (this->pre_so_point.find(name) != this->pre_so_point.end())
+		return true;
+	return false;
+}
