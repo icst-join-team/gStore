@@ -724,6 +724,10 @@ Join::cartesian(int pos, int end)
 void
 Join::toStartJoin()
 {
+	cout << "to Start Join var num = " << this->var_num << endl;
+	for (int i = 0; i < this->var_num; ++i)	
+		this->basic_query->determine_prefilled_var(i);
+
 	for (int i = 0; i < this->var_num; ++i)
 	{
 		if (this->basic_query->isReady(i))
@@ -836,6 +840,7 @@ Join::toStartJoin()
 	//cout<<"current can size: "<<origin_candidate_list.size()<<endl;
 }
 
+
 // use the appropriate method to join candidates
 bool
 Join::join()
@@ -899,6 +904,26 @@ Join::join()
 		cout << "ERROR: no method found!" << endl;
 		break;
 	}
+
+	//this->basic_query->after_main_join();
+
+
+	/*
+	for (int i = 0; i < this->id_pos; ++i)
+	{
+		IDList* idlist = this->basic_query->fetchVarCand(this->pos2id[i]);
+		if (idlist == NULL)
+			continue;
+		for (TableIterator it0 = this->current_table.begin(); it0 != this->new_start;)
+		{
+			//bsearch_vec_uporder
+			if (!idlist->bsearch_uporder((*it0)[i]))
+				it0 = this->current_table.erase(it0);
+			else
+				it0++;
+		}
+	}
+	*/
 
 	return ret;
 }
@@ -1286,7 +1311,9 @@ Join::multi_join()
 	{
 		unsigned ele = start_table.getID(i);
 		//NOTICE: we can denote the total size here in vector, but no need because the variables' num is small
-		//(won't double to require more space)
+		//(won't double to require more space)		
+		//RecordType == vector<unsigned>
+		// record.size == 1 and the only element is ele
 		RecordType record(1, ele);
 		this->current_table.push_back(record);
 		//this->table_row_new.push_back(false);
@@ -1922,6 +1949,7 @@ Join::preFilter(int _var)
 bool
 Join::only_pre_filter_after_join()
 {
+	cout << "this->current_table.size()  = " << this->current_table.size() << endl;
 	for (int var_id = 0; var_id < this->var_num; var_id++)
 	{
 		int var_degree = this->basic_query->getVarDegree(var_id);
@@ -2065,3 +2093,18 @@ Join::only_pre_filter_after_join()
 	return true;
 }
 
+void
+Join::FillVarCand(const string &_var, const vector<unsigned> &_id_list)
+{
+	this->basic_query->fillVarCand(_var, _id_list);
+}
+void
+Join::FillVarCand(int _var_id,const IDList* _id_list)
+{
+	this->basic_query->fillVarCand( _var_id,  _id_list);
+}
+void 
+Join::FillVarCand(int _var_id, const vector<unsigned> &_id_list)
+{
+	this->basic_query->fillVarCand( _var_id, _id_list);
+}

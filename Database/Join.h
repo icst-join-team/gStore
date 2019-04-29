@@ -142,6 +142,11 @@ public:
 	bool join_sparql(SPARQLquery& _sparql_query);
 	bool join_basic(BasicQuery* _basic_query, bool* d_triple);
 	~Join();
+
+	void FillVarCand(const string &_var, const vector<unsigned> &_id_list);
+	void FillVarCand(int _var_id, const IDList* _id_list);
+	void FillVarCand(int _var_id, const vector<unsigned> &_id_list);
+
 };
 
 #endif //_JOIN_JOIN_H

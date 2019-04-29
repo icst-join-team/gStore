@@ -177,7 +177,14 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 	cout << "start constant filter here " << endl << endl;
 	for (int _var_i = 0; _var_i < var_num; _var_i++)
 	{
-	    
+		// if its candidate has been added before handle
+		if (basic_query->fetchVarCand(_var_i) != NULL)
+		{
+			IDList &t = basic_query->getCandidateList(_var_i);
+			t.copy(basic_query->fetchVarCand(_var_i));
+			basic_query->setReady(_var_i);
+			continue;
+		}
 	    //filter before join here
 	    
 	    int var_degree = basic_query->getVarDegree(_var_i);
@@ -202,10 +209,14 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 	        {
 	            neighbor_name = triple.object;
 	        }
-	        else
+	        else if(dge_type == Util::EDGE_IN)
 	        {
 	            neighbor_name = triple.subject;
 	        }
+			else // Util::EDGE_PRE
+			{
+				continue;
+			}
 	        
 	        bool only_preid_filter = (basic_query->isOneDegreeNotJoinVar(neighbor_name));
 			//NOTICE: we only need to consider constants here
@@ -230,6 +241,7 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 	        
 	        unsigned id_list_len = 0;
 	        unsigned* id_list = NULL;
+
 	        if (pre_id >= 0)
 	        {
 	            if (edge_type == Util::EDGE_OUT)
@@ -278,41 +290,50 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 	    }
             // skip pre_filter when the candidate of a variable is small
             // enough after constant_filter
-            if (_list.size() > 0)
-	    {
-	    	 for (int j = 0; j < var_degree; j++)
-	    	{
-	        	int neighbor_id = basic_query->getEdgeNeighborID(_var_i, j);
-			//-1: constant or variable not in join; otherwise, variable in join
-	 	        if (neighbor_id == -1)   
-	        	{
-	            	    continue;
-	        	}
-	        	TYPE_PREDICATE_ID pre_id = basic_query->getEdgePreID(_var_i, j);
-	        	char edge_type = basic_query->getEdgeType(_var_i, j);
-			int estimate_val;
-			if (edge_type == Util::EDGE_OUT)				
-			    estimate_val= _list.size()*pre2num[pre_id]/pre2sub[pre_id];
-			else
-			    estimate_val = _list.size()*pre2num[pre_id]/pre2obj[pre_id];
-			if(estimate_val < estimate_num[neighbor_id])
-			    estimate_num[neighbor_id] = estimate_val;
-			
-		}
-    
-	    }
-	
-            cout << "\t\t[" << _var_i << "] after constant filter, candidate size = " << _list.size() << endl << endl << endl;
-	}
 
-	cout << "pre filter start here" << endl;
+		if (_list.size() > 0)
+		{
+			for (int j = 0; j < var_degree; j++)
+			{
+				int neighbor_id = basic_query->getEdgeNeighborID(_var_i, j);
+				//-1: constant or variable not in join; otherwise, variable in join
+				if (neighbor_id == -1)
+				{
+					continue;
+				}
+				TYPE_PREDICATE_ID pre_id = basic_query->getEdgePreID(_var_i, j);
+				char edge_type = basic_query->getEdgeType(_var_i, j);
+				int estimate_val;
+				if (edge_type == Util::EDGE_OUT)
+					estimate_val = _list.size()*pre2num[pre_id] / pre2sub[pre_id];
+				else
+					estimate_val = _list.size()*pre2num[pre_id] / pre2obj[pre_id];
+				if (estimate_val < estimate_num[neighbor_id])
+					estimate_num[neighbor_id] = estimate_val;
+
+			}
+
+		}
+	
+            //cout << "\t\t[" << _var_i << "] after constant filter, candidate size = " << _list.size() << endl << endl << endl;
+	}
+	for (int _var_i = 0; _var_i < var_num; _var_i++)
+	{
+		cout << "\tVar" << _var_i << " " << basic_query->getVarName(_var_i) << endl;
+		cout << "\t\t[" << _var_i << "] after constant filter, candidate size = " << (basic_query->getCandidateList(_var_i)).size() << endl << endl << endl;
+	}
+	cout << "pre filter starts here" << endl;
 
 	//TODO:use vector instead of set
 	for(int _var = 0; _var < var_num; _var++)
 	{
 	    if(basic_query->isSatelliteInJoin(_var))
 	        continue;
-            
+
+		if (basic_query->fetchVarCand(_var) != NULL)
+			continue;
+		
+
 	    cout << "\tVar" << _var << " " << basic_query->getVarName(_var) << endl;
 	    IDList& cans = basic_query->getCandidateList(_var);
 	    unsigned size = basic_query->getCandidateSize(_var);
@@ -374,163 +395,270 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 	        }
 
 	        double border = size / (Util::logarithm(2, size) + 1);
-	        if(pre2num[pre_id] > border)
+	       if(pre2num[pre_id] > border)
 	        {
 	        	cout << "skip the prefilter because the pre var is not efficent enough" << endl;
 	        	continue;
 	        }
 
-	        int prefilter_num;
-		if((edge_type == Util::EDGE_OUT && (prefilter_num = pre2obj[pre_id]) > estimate_num[_var]) ||
-			(edge_type == Util::EDGE_IN && (prefilter_num = pre2sub[pre_id]) > estimate_num[_var]))
+		   int prefilter_num;
+		   if ((edge_type == Util::EDGE_OUT && (prefilter_num = pre2obj[pre_id]) > estimate_num[_var]) ||
+			   (edge_type == Util::EDGE_IN && (prefilter_num = pre2sub[pre_id]) > estimate_num[_var]))
+		   {
+			   cout << "skip the prefilter because the constant filter is strong enough" << endl;
+			   // cout << "estimate_num:" << estimate_num[_var] << endl;
+			   // cout << "prefilter_num:" << prefilter_num << endl;
+			   continue;
+		   }
+
+		   if (basic_query->isOneDegreeVar(neighbor))
+		   {
+			   dealed_triple[triple_id] = true;
+		   }
+
+		   if (edge_type == Util::EDGE_OUT)
+		   {
+			   out_edge_pre_id.insert(pre_id);
+		   }
+		   else
+		   {
+			   in_edge_pre_id.insert(pre_id);
+		   }
+		}
+		if (in_edge_pre_id.empty() && out_edge_pre_id.empty())
 		{
-			cout << "skip the prefilter because the constant filter is strong enough" << endl;
-			// cout << "estimate_num:" << estimate_num[_var] << endl;
-			// cout << "prefilter_num:" << prefilter_num << endl;
 			continue;
 		}
+		basic_query->setReady(_var);
+		//NOTICE:use p2s here, use s2p in only_pre_filter_after_join because pres there are not efficient
+		set<TYPE_PREDICATE_ID>::iterator it;
+		unsigned* list = NULL;
+		unsigned len = 0;
+		for (it = in_edge_pre_id.begin(); it != in_edge_pre_id.end(); ++it)
+		{
+			// if there exists a variable with limited matches in the query, then skip the filter of other
+			// variables as soon as possible
 
-	        if(basic_query->isOneDegreeVar(neighbor))
-	        {
-	            dealed_triple[triple_id] = true;
-	        }
-	        
-	        if (edge_type == Util::EDGE_OUT)
-	        {
-	            out_edge_pre_id.insert(pre_id);
-	        }
-	        else
-	        {
-	            in_edge_pre_id.insert(pre_id);
-	        }
-	    }
-	    if (in_edge_pre_id.empty() && out_edge_pre_id.empty())
-	    {
-	        continue;
-	    }
-	    basic_query->setReady(_var);
-	    //NOTICE:use p2s here, use s2p in only_pre_filter_after_join because pres there are not efficient
-	    set<TYPE_PREDICATE_ID>::iterator it;
-	    unsigned* list = NULL;
-	    unsigned len = 0;
-	    for(it = in_edge_pre_id.begin(); it != in_edge_pre_id.end(); ++it)
-	    {
-	    	// if there exists a variable with limited matches in the query, then skip the filter of other
-	    	// variables as soon as possible
-
-		if(pre2num[*it] < 1000000 || cans.size() > 1000000 || cans.size() == 0)
-        	{
-		        kvstore->getobjIDlistBypreID(*it, list, len, true);
-		        if(cans.size() == 0)
-		            cans.unionList(list,len);
-		        else
-		            cans.intersectList(list, len);
-		        delete[] list;
-		        if(cans.size() == 0)
-				{	
+			if (pre2num[*it] < 1000000 || cans.size() > 1000000 || cans.size() == 0)
+			{
+				kvstore->getobjIDlistBypreID(*it, list, len, true);
+				if (cans.size() == 0)
+					cans.unionList(list, len);
+				else
+					cans.intersectList(list, len);
+				delete[] list;
+				if (cans.size() == 0)
+				{
 					return false;
 				}
 			}
-			else{
+			else {
 				int can_size = cans.size();
-				for(std::vector<unsigned>::iterator i = cans.begin(); i != cans.end();)
+				for (std::vector<unsigned>::iterator i = cans.begin(); i != cans.end();)
 				{
 					kvstore->getpreIDlistByobjID(*i, list, len, true);
 					bool can_matched = false;
 					int s = 0, e = len - 1;
-					int mid = (s + e)/2;
+					int mid = (s + e) / 2;
 					while (s <= e)
 					{
-						if(list[mid] == *it)
+						if (list[mid] == *it)
 						{
 							can_matched = true;
 							break;
 						}
-						else if(list[mid] < *it)
+						else if (list[mid] < *it)
 						{
 							s = mid + 1;
 						}
 						else {
 							e = mid - 1;
 						}
-						mid = (s + e)/2;
+						mid = (s + e) / 2;
 					}
-					if(can_matched == false)
+					if (can_matched == false)
 					{
 						i = cans.eraseAt(i);
 					}
-					else{
+					else {
 						i++;
 					}
 				}
 			}
-	    }
-    	
-    	if(in_edge_pre_id.size() != 0 && cans.size() == 0)
-        {
-  //          cout << "after in_edge_filter, the cans size = 0" << endl;
-            return false;
-        }
-        for(it = out_edge_pre_id.begin(); it != out_edge_pre_id.end(); ++it)
-	{
-                
-	    	// if there exists a variable with limited matches in the query, then skip the filter of other
-	    	// variables as soon as possible
-        	
-  		if(pre2num[*it] < 1000000 || cans.size() > 1000000  || cans.size() == 0)
-        	{
-	            kvstore->getsubIDlistBypreID(*it, list, len, true);
-	            if(cans.size() == 0)
-	                cans.unionList(list,len);
-	            else
-	                cans.intersectList(list, len);
-	            delete[] list;
-		        if(cans.size() == 0)
+		}
+
+		if (in_edge_pre_id.size() != 0 && cans.size() == 0)
+		{
+			//          cout << "after in_edge_filter, the cans size = 0" << endl;
+			return false;
+		}
+		for (it = out_edge_pre_id.begin(); it != out_edge_pre_id.end(); ++it)
+		{
+
+			// if there exists a variable with limited matches in the query, then skip the filter of other
+			// variables as soon as possible
+
+			if (pre2num[*it] < 1000000 || cans.size() > 1000000 || cans.size() == 0)
+			{
+				kvstore->getsubIDlistBypreID(*it, list, len, true);
+				if (cans.size() == 0)
+					cans.unionList(list, len);
+				else
+					cans.intersectList(list, len);
+				delete[] list;
+				if (cans.size() == 0)
 				{
 					return false;
 				}
 			}
-			else{
+			else {
 				int can_size = cans.size();
-				for(std::vector<unsigned>::iterator i = cans.begin(); i != cans.end();)
+				for (std::vector<unsigned>::iterator i = cans.begin(); i != cans.end();)
 				{
 					kvstore->getpreIDlistBysubID(*i, list, len, true);
 					bool can_matched = false;
 					int s = 0, e = len - 1;
-					int mid = (s + e)/2;
+					int mid = (s + e) / 2;
 					while (s <= e)
 					{
-						if(list[mid] == *it)
+						if (list[mid] == *it)
 						{
 							can_matched = true;
 							break;
 						}
-						else if(list[mid] < *it)
+						else if (list[mid] < *it)
 						{
 							s = mid + 1;
 						}
 						else {
 							e = mid - 1;
 						}
-						mid = (s + e)/2;
+						mid = (s + e) / 2;
 					}
-					if(can_matched == false)
+					if (can_matched == false)
 					{
 						i = cans.eraseAt(i);
-					}else{
+					}
+					else {
 						i++;
 					}
 				}
 			}
-        }
-	    
-	    //this is a core vertex, so if not literal var, exit when empty
-	    if(cans.empty())
-	    {
-	        return false;
-	    }
-	    cout << "\t\t[" << _var << "] after pre var filter, candidate size = " << cans.size() << endl << endl << endl;
+		}
+
+		//this is a core vertex, so if not literal var, exit when empty
+		if (cans.empty())
+		{
+			return false;
+		}
+		cout << "\t\t[" << _var << "] after pre var filter, candidate size = " << cans.size() << endl << endl << endl;
 	}
+
+	cout << "filter for pre start here" << endl;
+	for (int _var_i = 0; _var_i < var_num; _var_i++)
+	{
+		if (basic_query->fetchVarCand(_var_i) != NULL)
+			continue;
+		if (!basic_query->isVarBothPre_so(_var))
+			continue;
+
+		int var_degree = basic_query->getVarDegree(_var_i);
+		IDList &_list = basic_query->getCandidateList(_var_i);
+		cout << "\tVar" << _var_i << " " << basic_query->getVarName(_var_i) << endl;
+
+		for (int j = 0; j < var_degree; j++)
+		{
+
+			char edge_type = basic_query->getEdgeType(_var_i, j);
+			int triple_id = basic_query->getEdgeID(_var_i, j);
+			Triple triple = basic_query->getTriple(triple_id);
+			string sub = triple.subject;
+			string obj = triple.object;
+
+			if (edge_type != Util::EDGE_PRE)			
+				continue;
+
+			TYPE_ENTITY_LITERAL_ID sub_id = (kvstore)->getIDByEntity(sub);
+			if (sub_id == INVALID_ENTITY_LITERAL_ID)
+			{
+				sub_id = (kvstore)->getIDByLiteral(sub);
+			}
+			TYPE_ENTITY_LITERAL_ID obj_id = (kvstore)->getIDByEntity(obj);
+			if (obj_id == INVALID_ENTITY_LITERAL_ID)
+			{
+				obj_id = (kvstore)->getIDByLiteral(obj);
+			}
+			if (obj_id == INVALID_ENTITY_LITERAL_ID && sub_id == INVALID_ENTITY_LITERAL_ID)
+				continue;
+
+			unsigned id_list_len = 0;
+			unsigned* id_list = NULL;
+
+			if (sub_id >= 0)
+			{
+				if (obj_id>=0)
+				{
+					kvstore->getpreIDlistBysubIDobjID(sub_id, obj_id, id_list, id_list_len, true);
+				}
+				else
+				{
+					kvstore->getpreIDlistBysubID(sub_id, id_list, id_list_len, true);
+				}
+			}
+			else
+			{
+				kvstore->getpreIDlistByobjID(obj_id, id_list, id_list_len, true);
+			}
+			//WARN: this may need to check, end directly
+			if (id_list_len == 0)
+			{
+				_list.clear();
+				delete[] id_list;
+				return false;
+			}
+			//updateList(_list, id_list, id_list_len);
+			if (_list.size() == 0)
+				_list.unionList(id_list, id_list_len);
+			else
+				_list.intersectList(id_list, id_list_len);
+			delete[] id_list;
+
+			if (_list.size() == 0)
+			{
+				return false;
+			}
+		}
+		// skip pre_filter when the candidate of a variable is small
+		// enough after constant_filter
+
+		if (_list.size() > 0)
+		{
+			for (int j = 0; j < var_degree; j++)
+			{
+				int neighbor_id = basic_query->getEdgeNeighborID(_var_i, j);
+				//-1: constant or variable not in join; otherwise, variable in join
+				if (neighbor_id == -1)
+				{
+					continue;
+				}
+				TYPE_PREDICATE_ID pre_id = basic_query->getEdgePreID(_var_i, j);
+				char edge_type = basic_query->getEdgeType(_var_i, j);
+				int estimate_val;
+				if (edge_type == Util::EDGE_OUT)
+					estimate_val = _list.size()*pre2num[pre_id] / pre2sub[pre_id];
+				else
+					estimate_val = _list.size()*pre2num[pre_id] / pre2obj[pre_id];
+				if (estimate_val < estimate_num[neighbor_id])
+					estimate_num[neighbor_id] = estimate_val;
+
+			}
+
+		}
+
+		//cout << "\t\t[" << _var_i << "] after constant filter, candidate size = " << _list.size() << endl << endl << endl;
+	}
+	//TODO:use vector instead of set
+
 
 	return true;
 
@@ -585,6 +713,27 @@ Strategy::handler0(BasicQuery* _bq, vector<unsigned*>& _result_list)
 
 	bool * d_triple = (bool*)calloc(_bq->getTripleNum(), sizeof(bool));
 
+	cout << "fill the candidate" << endl;
+	int a0 = kvstore->getIDByEntity("<node1>");
+	int a1 = kvstore->getIDByEntity("<node3>");
+	vector<unsigned> tmp_id_list;
+	//tmp_id_list.insert(a0);
+	if (a0 < a1)
+	{
+		tmp_id_list.push_back(a0);
+		tmp_id_list.push_back(a1);
+	}
+	else 
+	{
+		tmp_id_list.push_back(a1);
+		tmp_id_list.push_back(a0);
+	}
+	_bq->fillVarCand(0, tmp_id_list);
+
+
+
+
+
 	bool ret2 = pre_handler(_bq, kvstore, pre2num,pre2sub,pre2obj, d_triple);
 	long after_prehandler = Util::get_cur_time();
 	cout << "after prehandler: used " << (after_prehandler - tv_retrieve) << " ms" << endl;
@@ -594,6 +743,7 @@ Strategy::handler0(BasicQuery* _bq, vector<unsigned*>& _result_list)
 
 	Join *join = new Join(kvstore, pre2num, this->limitID_predicate, this->limitID_literal,this->limitID_entity);
 	join->join_basic(_bq,d_triple);
+	cout << "after join in Strategy.cpp" << endl;
 	delete join;
 
 	long tv_join = Util::get_cur_time();
