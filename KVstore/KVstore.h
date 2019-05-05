@@ -171,7 +171,11 @@ public:
 
 	bool load_trie(int _mode);
 
-	Trie *getTrie();
+	Trie *getTrie();	
+	void fillmap_pre2so(map<unsigned int, unsigned int> *filled_preid2subobj);
+	void fillmap_so2pre(map<unsigned int, unsigned int> *fulled_subobjid2pre);
+	map<unsigned int, unsigned int> * getmap_pre2so();
+	map<unsigned int, unsigned int> * getmap_so2pre();
 private:
 	std::string store_path;
 
