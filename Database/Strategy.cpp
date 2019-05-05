@@ -722,25 +722,22 @@ Strategy::handler0(BasicQuery* _bq, vector<unsigned*>& _result_list)
 
 	bool * d_triple = (bool*)calloc(_bq->getTripleNum(), sizeof(bool));
 
-	cout << "fill the candidate" << endl;
-	int a0 = kvstore->getIDByEntity("<node1>");
-	int a1 = kvstore->getIDByEntity("<node3>");
-	vector<unsigned> tmp_id_list;
-	//tmp_id_list.insert(a0);
-	if (a0 < a1)
-	{
-		tmp_id_list.push_back(a0);
-		tmp_id_list.push_back(a1);
-	}
-	else 
-	{
-		tmp_id_list.push_back(a1);
-		tmp_id_list.push_back(a0);
-	}
-	_bq->fillVarCand(0, tmp_id_list);
-
-
-
+	//cout << "fill the candidate" << endl;
+	//int a0 = kvstore->getIDByEntity("<node1>");
+	//int a1 = kvstore->getIDByEntity("<node3>");
+	//vector<unsigned> tmp_id_list;
+	////tmp_id_list.insert(a0);
+	//if (a0 < a1)
+	//{
+	//	tmp_id_list.push_back(a0);
+	//	tmp_id_list.push_back(a1);
+	//}
+	//else 
+	//{
+	//	tmp_id_list.push_back(a1);
+	//	tmp_id_list.push_back(a0);
+	//}
+	//_bq->fillVarCand(0, tmp_id_list);
 
 
 	bool ret2 = pre_handler(_bq, kvstore, pre2num,pre2sub,pre2obj, d_triple);
