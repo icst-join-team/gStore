@@ -59,6 +59,9 @@ Database::Database()
 	this->initIDinfo();
 
 	pthread_rwlock_init(&(this->update_lock), NULL);
+
+	this->id_correspondence_file = "id_correspondence.txt";
+	this->exist_id_correspondence_file = this->load_id_correspondence_file();
 }
 
 Database::Database(string _name)
@@ -114,6 +117,9 @@ Database::Database(string _name)
 	this->initIDinfo();
 
 	pthread_rwlock_init(&(this->update_lock), NULL);
+
+	this->id_correspondence_file = "id_correspondence.txt";
+	this->exist_id_correspondence_file = this->load_id_correspondence_file();
 }
 
 //==================================================================================================================================================
@@ -529,6 +535,56 @@ Database::release(FILE* fp0)
 	fprintf(fp0, "ok to delete DB!\n");
 	fflush(fp0);
 }
+
+bool 
+Database::load_id_correspondence_file()
+{
+	string fname = this->getIDCorrespondenceFile();
+
+	FILE* fd = fopen(fname.c_str(), "r");
+	if(fd == NULL)
+	{
+		cout << "File " << this->id_correspondence_file << " doesn't exists yet" << endl << endl;
+		return false;
+	}
+	else
+	{
+		TYPE_ENTITY_LITERAL_ID t1;
+		TYPE_ENTITY_LITERAL_ID t2;
+
+		fread(&t1, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fd);
+		while (t1 != INVALID)
+		{
+			fread(&t2, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fd);
+			(this->preid2subobj).insert(make_pair(t1, t2));
+			fread(&t1, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fd);
+		}
+
+		int size;
+		while ((size = fread(&t1, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fd)) != 0)
+		{
+			fread(&t2, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fd);
+			(this->subobjid2pre).insert(make_pair(t1, t2));
+		}
+
+	}
+		/*
+		map<TYPE_ENTITY_LITERAL_ID, TYPE_ENTITY_LITERAL_ID>::iterator t1 = (this->preid2subobj).begin();
+		map<TYPE_ENTITY_LITERAL_ID, TYPE_ENTITY_LITERAL_ID>::iterator t2 = (this->subobjid2pre).begin();
+		for (; t1 != (this->preid2subobj).end(); t1++)
+		{
+			cout << t1->first << "," << t1->second << endl;
+		}
+		for (; t2 != (this->preid2subobj).end(), t2++)
+		{
+			cout << t2->first << "," << t2->second << endl;
+		}
+		*/
+		fclose(fd);
+		cout << "File " << this->id_correspondence_file << " is loaded" << endl << endl;
+		return true;
+}
+
 
 Database::~Database()
 {
@@ -1858,6 +1914,12 @@ Database::getIDTuplesFile()
 	return this->getStorePath() + "/" + this->id_tuples_file;
 }
 
+string
+Database::getIDCorrespondenceFile()
+{
+	return this->getStorePath() + "/" + this->id_correspondence_file;
+}
+
 bool
 Database::saveDBInfoFile()
 {
@@ -2621,6 +2683,8 @@ Database::sub2id_pre2id_obj2id_RDFintoSignature(const string _rdf_file)
 	while (true)
 	{
 		int parse_triple_num = 0;
+		map<string, TYPE_ENTITY_LITERAL_ID> _prestring;
+		map<string, TYPE_ENTITY_LITERAL_ID> _objsubstring;
 
 		_parser.parseFile(triple_array, parse_triple_num);
 
@@ -2742,10 +2806,23 @@ Database::sub2id_pre2id_obj2id_RDFintoSignature(const string _rdf_file)
 			tmp_id_tuple.preid = _pre_id;
 			tmp_id_tuple.objid = _obj_id;
 			fwrite(&tmp_id_tuple, sizeof(ID_TUPLE), 1, fp);
+
 			//fwrite(&_sub_id, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fp);
 			//fwrite(&_pre_id, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fp);
 			//fwrite(&_obj_id, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fp);
 
+			int len_sub = _sub.size();
+			int len_pre = _pre.size();
+			int len_obj = _obj.size();
+			string _sub_content = _sub.substr(1, len_sub - 2);
+			string _pre_content = _pre.substr(1, len_pre - 2);
+			string _obj_content = _obj.substr(1, len_obj - 2);
+			if (_objsubstring.find(_obj_content) == _objsubstring.end())
+				_objsubstring.insert(make_pair(_obj_content, _obj_id));
+			if (_objsubstring.find(_sub_content) == _objsubstring.end())
+				_objsubstring.insert(make_pair(_sub_content, _sub_id));
+			if (_prestring.find(_pre_content) == _prestring.end())
+				_prestring.insert(make_pair(_pre_content, _pre_id));
 #ifdef DEBUG_PRECISE
 			////  save six tuples
 				//_six_tuples_fout << _sub_id << '\t'
@@ -2809,6 +2886,52 @@ Database::sub2id_pre2id_obj2id_RDFintoSignature(const string _rdf_file)
 				////this can work well
 				//*_entity_bitset[_obj_id] |= _tmp_bitset;
 			//}
+		}
+		if (this->exist_id_correspondence_file == 0)
+		{
+			cout << "Prepare to build the id correspondence file" << endl;
+			map<string, TYPE_ENTITY_LITERAL_ID>::iterator iter_goal;
+			map<string, TYPE_ENTITY_LITERAL_ID>::iterator iter_pre = _prestring.begin();
+			for (; iter_pre != _prestring.end(); ++iter_pre)
+			{
+				string pre_string = iter_pre->first;
+				if ((iter_goal = _objsubstring.find(pre_string)) != _objsubstring.end())
+				{
+					TYPE_ENTITY_LITERAL_ID _preid = iter_pre->second;
+					TYPE_ENTITY_LITERAL_ID _objsubid = iter_goal->second;
+					(this->preid2subobj).insert(make_pair(_preid, _objsubid));
+					(this->subobjid2pre).insert(make_pair(_objsubid, _preid));
+				}
+			}
+
+			string fname2 = this->getIDCorrespondenceFile();
+			FILE* fp2 = fopen(fname2.c_str(), "w");
+			if (fp2 == NULL)
+			{
+				cout << "error in Database::sub2id_pre2id_obj2id() -- unable to open file to write " << fname2 << endl;
+				return false;
+			}
+
+			map<TYPE_ENTITY_LITERAL_ID, TYPE_ENTITY_LITERAL_ID>::iterator iter_preid2subobjid = (this->preid2subobj).begin();
+			for (; iter_preid2subobjid != (this->preid2subobj).end(); ++iter_preid2subobjid)
+			{
+				TYPE_ENTITY_LITERAL_ID t1 = iter_preid2subobjid->first;
+				TYPE_ENTITY_LITERAL_ID t2 = iter_preid2subobjid->second;
+				fwrite(&t1, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fp2);
+				fwrite(&t2, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fp2);
+			}
+			TYPE_ENTITY_LITERAL_ID t = INVALID;
+			fwrite(&t, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fp2);
+			map<TYPE_ENTITY_LITERAL_ID, TYPE_ENTITY_LITERAL_ID>::iterator iter_subobjid2preid = (this->subobjid2pre).begin();
+			for (; iter_subobjid2preid != (this->subobjid2pre).end(); ++iter_subobjid2preid)
+			{
+				TYPE_ENTITY_LITERAL_ID t1 = iter_subobjid2preid->first;
+				TYPE_ENTITY_LITERAL_ID t2 = iter_subobjid2preid->second;
+				fwrite(&t1, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fp2);
+				fwrite(&t2, sizeof(TYPE_ENTITY_LITERAL_ID), 1, fp2);
+			}
+			fclose(fp2);
+			cout << "ID correspondence file build finished" << endl;
 		}
 	}
 

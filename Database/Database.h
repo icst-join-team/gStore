@@ -87,6 +87,9 @@ public:
 	//id tuples file
 	string getIDTuplesFile();
 
+	//id correspondence file
+	string getIDCorrespondenceFile();
+
 	VSTree* getVSTree();
 	KVstore* getKVstore();
 	StringIndex* getStringIndex();
@@ -256,6 +259,8 @@ private:
 	bool exist_triple(TYPE_ENTITY_LITERAL_ID _sub_id, TYPE_PREDICATE_ID _pre_id, TYPE_ENTITY_LITERAL_ID _obj_id);
 	bool exist_triple(const TripleWithObjType& _triple);
 
+	bool load_id_correspondence_file();
+
 	//* _rdf_file denotes the path of the RDF file, where stores the rdf data
 	//* there are many step in this function, each one responds to an sub-function
 	//* 1. map sub2id and pre2id
@@ -298,6 +303,12 @@ private:
 	static int read_update_log(const string _path, multiset<string>& _i, multiset<string>& _r);
 	bool restore_update(multiset<string>& _i, multiset<string>& _r);
 	void clear_update_log();
+
+	string id_correspondence_file;
+	bool exist_id_correspondence_file;
+	//preid2subobjid,subobjid2preid
+	map<TYPE_ENTITY_LITERAL_ID, TYPE_ENTITY_LITERAL_ID> preid2subobj;
+	map<TYPE_ENTITY_LITERAL_ID, TYPE_ENTITY_LITERAL_ID> subobjid2pre;
 };
 
 #endif //_DATABASE_DATABASE_H
