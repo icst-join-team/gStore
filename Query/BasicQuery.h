@@ -319,6 +319,7 @@ public:
 	std::string triple_str();
 
 	bool isVarBothPre_so(int _var);
+	bool BasicQuery::isVarBothPre_so(string  _var);
 };
 
 #endif //_QUERY_BASICQUERY_H

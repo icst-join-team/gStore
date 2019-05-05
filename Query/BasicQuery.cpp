@@ -670,11 +670,11 @@ BasicQuery::encodeBasicQuery(KVstore* _p_kvstore, const vector<string>& _query_v
             obj_var_id = _find_obj_itr->second;
         }
 
-		bool pre_is_var = (pre_var_id != -1);
-		if (pre_is_var)
-		{
-			this->updatePreSig(pre_var_id, -1, -1, i, -1);
-		}
+		//bool pre_is_var = (pre_var_id != -1);
+		//if (pre_is_var)
+		//{
+		//	this->updatePreSig(pre_var_id, -1, i,-1, -1);
+		//}
         // sub is either a var or a string
         bool sub_is_var = (sub_var_id != -1);
         if(sub_is_var)
@@ -1106,6 +1106,7 @@ BasicQuery::buildTuple2Freq()
 	while (itr_pre != this->triple_vt.end())
 	{
 		pre_string_now.insert(_t.predicate);
+		itr_pre++;
 	}
 
     vector<Triple>::iterator itr = this->triple_vt.begin();
@@ -1353,11 +1354,19 @@ string BasicQuery::to_str()
 
     return _ss.str();
 }
+
 bool 
 BasicQuery::isVarBothPre_so(int _var)
 {
 	string name = this->var_name[_var];
 	if (this->pre_so_point.find(name) != this->pre_so_point.end())
+		return true;
+	return false;
+}
+bool
+BasicQuery::isVarBothPre_so(string  _var)
+{
+	if (this->pre_so_point.find(_var) != this->pre_so_point.end())
 		return true;
 	return false;
 }
