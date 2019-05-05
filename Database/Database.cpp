@@ -4688,6 +4688,14 @@ Database::getFinalResult(SPARQLquery& _sparql_q, ResultSet& _result_set)
 
 	return true;
 }
+map<unsigned int, unsigned int> *get_preid2subobj()
+{
+	return &this->preid2subobj;
+}
+map<unsigned int, unsigned int> *get_subobjid2pre()
+{
+	return &this->subobjid2pre;
+}
 
 //void
 //Database::printIDlist(int _i, int* _list, int _len, string _log)

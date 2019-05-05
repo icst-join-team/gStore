@@ -101,6 +101,8 @@ public:
 	TYPE_ENTITY_LITERAL_ID& getlimitID_entity();
 	TYPE_PREDICATE_ID& getlimitID_predicate();
 	mutex& get_query_parse_lock();
+	map<unsigned int, unsigned int> *get_preid2subobj();
+	map<unsigned int, unsigned int> *get_subobjid2pre();
 
 private:
 	string name;

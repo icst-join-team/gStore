@@ -592,23 +592,34 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 				continue;
 
 			unsigned id_list_len = 0;
-			unsigned* id_list = NULL;
+			unsigned* id_list_pre = NULL;
 
-			if (sub_id >= 0)
+			if (sub_id != INVALID_ENTITY_LITERAL_ID)
 			{
-				if (obj_id>=0)
+				if (obj_id!= INVALID_ENTITY_LITERAL_ID)
 				{
-					kvstore->getpreIDlistBysubIDobjID(sub_id, obj_id, id_list, id_list_len, true);
+					kvstore->getpreIDlistBysubIDobjID(sub_id, obj_id, id_list_pre, id_list_len, true);
 				}
 				else
 				{
-					kvstore->getpreIDlistBysubID(sub_id, id_list, id_list_len, true);
+					kvstore->getpreIDlistBysubID(sub_id, id_list_pre, id_list_len, true);
 				}
 			}
 			else
 			{
-				kvstore->getpreIDlistByobjID(obj_id, id_list, id_list_len, true);
+				kvstore->getpreIDlistByobjID(obj_id, id_list_pre, id_list_len, true);
 			}
+
+			//translate pre id_list to Sub/obj id
+			unsigned* id_list = new unsigned[id_list_len];
+			map<unsigned int, unsigned int> *map_pre2so = this->kvstore->getmap_pre2so();
+			for (int id_i = 0; id_i < id_list_len; id_i++)
+			{
+				id_list[i] = (*map_pre2so)[id_list_pre[i]];
+			}
+			delete[] id_list_pre;
+		
+
 			//WARN: this may need to check, end directly
 			if (id_list_len == 0)
 			{
@@ -655,10 +666,8 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 
 		}
 
-		//cout << "\t\t[" << _var_i << "] after constant filter, candidate size = " << _list.size() << endl << endl << endl;
+		cout << "\t\t[" << _var_i << "] after constant filter, candidate size = " << _list.size() << endl << endl << endl;
 	}
-	//TODO:use vector instead of set
-
 
 	return true;
 
@@ -742,6 +751,7 @@ Strategy::handler0(BasicQuery* _bq, vector<unsigned*>& _result_list)
 	}
 
 	Join *join = new Join(kvstore, pre2num, this->limitID_predicate, this->limitID_literal,this->limitID_entity);
+
 	join->join_basic(_bq,d_triple);
 	cout << "after join in Strategy.cpp" << endl;
 	delete join;

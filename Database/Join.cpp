@@ -80,7 +80,7 @@ Join::score_node(int var)
 	unsigned size = this->basic_query->getCandidateSize(var);
 	//NOTICE:needn't add degree here, consider in join edge efficience
 	double wt = 1;
-	for(unsigned i = 0; i < degree; ++i)
+	for (unsigned i = 0; i < degree; ++i)
 	{
 		//NOTICE:here we only consider edges which have power to prune
 		//each triple/edge need to be processed only once.
@@ -90,35 +90,35 @@ Join::score_node(int var)
 		//bool is_pre_var = false;
 		//if(triple.predicate[0] == '?')
 		//{
-			//is_pre_var = true;
+		//is_pre_var = true;
 		//}
 
-		if(this->dealed_triple[edge_id])
+		if (this->dealed_triple[edge_id])
 		{
 			continue;
 		}
 
 		//only consider undealed core join edges
 		int id2 = this->basic_query->getEdgeNeighborID(var, i);
-		if(id2 < 0 || id2 >= this->var_num || this->basic_query->isSatelliteInJoin(id2))
+		if (id2 < 0 || id2 >= this->var_num || this->basic_query->isSatelliteInJoin(id2))
 		{
 			continue;
 		}
 		//CHECK:if the pre id is valid (0<=p<limit_predicateID)
 		TYPE_PREDICATE_ID pid = this->basic_query->getEdgePreID(var, i);
 		//DEBUG: if TYPE_PREDICATE_ID is changed to unsigned
-		if(pid < 0 || pid >= this->limitID_predicate)
+		if (pid < 0 || pid >= this->limitID_predicate)
 		{
 			continue;
 		}
-		wt += Join::PARAM_PRE / (double)(this->pre2num[pid]+1);
+		wt += Join::PARAM_PRE / (double)(this->pre2num[pid] + 1);
 	}
 	//double wt = Join::PARAM_DEGREE * (double)degree + Join::PARAM_SIZE / (double)size + Join::PARAM_PRE / (double)num;
 	//we should deal with literal variable as lately as possible
 	//if(!this->is_literal_var(var))
 	//{
-		//no need to consider size for literal variable, because it may arise a lot
-		wt += Join::PARAM_SIZE / ((double)size+1);
+	//no need to consider size for literal variable, because it may arise a lot
+	wt += Join::PARAM_SIZE / ((double)size + 1);
 	//}
 
 	//the smallest wt returned is 0
@@ -150,10 +150,10 @@ Join::select()
 	double max = -1;
 	int maxi = -1;
 	//int border = this->basic_query->getVarNum();
-	for(int i = 0; i < this->var_num; ++i)
+	for (int i = 0; i < this->var_num; ++i)
 	{
 		//satellites which are not retrieved
-		if(!this->basic_query->isReady(i))
+		if (!this->basic_query->isReady(i))
 		{
 			continue;
 		}
@@ -206,7 +206,7 @@ Join::join_sparql(SPARQLquery& _sparql_query)
 bool
 Join::join_basic(BasicQuery* _basic_query, bool* d_triple)
 {
-	this->init(_basic_query,d_triple);
+	this->init(_basic_query, d_triple);
 	long begin = Util::get_cur_time();
 	//bool ret1 = this->filter_before_join();
 	//long after_constant_filter = Util::get_cur_time();
@@ -214,8 +214,8 @@ Join::join_basic(BasicQuery* _basic_query, bool* d_triple)
 	//cout << "after filter_before_join: used " << (after_constant_filter - begin) << " ms" << endl;
 	//if (!ret1)
 	//{
-		//this->clear();
-		//return false;
+	//this->clear();
+	//return false;
 	//}
 
 	//this->add_literal_candidate();
@@ -230,11 +230,11 @@ Join::join_basic(BasicQuery* _basic_query, bool* d_triple)
 	bool ret2 = pre_handler();
 	long after_prehandler = Util::get_cur_time();
 	cout << "after prehandler: used " << (after_prehandler - begin) << " ms" << endl;
-	
+
 	if (!ret2)
 	{
-		this->clear();
-		return false;
+	this->clear();
+	return false;
 	}
 	*/
 	bool ret3 = this->join();
@@ -343,7 +343,7 @@ Join::pre_var_handler()
 				{
 					sub_id = this->kvstore->getIDByEntity(sub_name);
 				}
-				else
+				else		//?s
 				{
 					if (!(this->basic_query->isOneDegreeNotJoinVar(sub_name)))
 						var1 = this->basic_query->getIDByVarName(sub_name);
@@ -368,15 +368,15 @@ Join::pre_var_handler()
 						var2 = -1;
 				}
 #ifdef DEBUG_JOIN
-				cout<<"var1: "<<var1<<"   var2: "<<var2<<endl;
-				cout<<"subid: "<<sub_id<<"   objid: "<<obj_id<<endl;
+				cout << "var1: " << var1 << "   var2: " << var2 << endl;
+				cout << "subid: " << sub_id << "   objid: " << obj_id << endl;
 #endif
 
 				unsigned* id_list = NULL;
 				unsigned id_list_len = 0;
 				//two vars in query
 				if (sub_id == INVALID_ENTITY_LITERAL_ID && obj_id == INVALID_ENTITY_LITERAL_ID)
-				//if (sub_id == -1 && obj_id == -1)
+					//if (sub_id == -1 && obj_id == -1)
 				{
 					if (var1 == -1 && var2 == -1)
 					{
@@ -483,9 +483,9 @@ Join::pre_var_handler()
 				else
 				{
 #ifdef DEBUG_JOIN
-					for(unsigned k = 0; k < valid_ans.size(); ++k)
-						cout << this->kvstore->getPredicateByID(valid_ans[k])<<" ";
-					cout<<endl;
+					for (unsigned k = 0; k < valid_ans.size(); ++k)
+						cout << this->kvstore->getPredicateByID(valid_ans[k]) << " ";
+					cout << endl;
 #endif
 				}
 			}
@@ -503,25 +503,39 @@ Join::pre_var_handler()
 			{
 				//if(!is_selected)
 				//{
-					//it++;
-					//continue;
+				//it++;
+				//continue;
 				//}
-				it->push_back(valid_ans[0]);
-				unsigned begin = 1;
-				if (!if_new_start && size > 1)
+				if (!this->basic_query->isVarBothPre_so(pre_var.name))
 				{
-					this->add_new_to_results(it, valid_ans[1]);
-					if_new_start = true;
-					//iterator it scan loop, to set the border to avoid going to the newly added ones
-					this->new_start = this->current_table.end();
-					this->new_start--;
-					begin = 2;
+					it->push_back(valid_ans[0]);
+					unsigned begin = 1;
+					if (!if_new_start && size > 1)
+					{
+						this->add_new_to_results(it, valid_ans[1]);
+						if_new_start = true;
+						//iterator it scan loop, to set the border to avoid going to the newly added ones
+						this->new_start = this->current_table.end();
+						this->new_start--;
+						begin = 2;
+					}
+					for (unsigned j = begin; j < size; ++j)
+					{
+						this->add_new_to_results(it, valid_ans[j]);
+					}
+					it++;
 				}
-				for (unsigned j = begin; j < size; ++j)
+				else
 				{
-					this->add_new_to_results(it, valid_ans[j]);
+					int var_pre = this->basic_query->getIDByVarName(pre_var.name);
+					int another_id = (*it)[this->id2pos[var_pre]];
+					map<unsigned int, unsigned int> *so2p_map = this->kvstore->getmap_so2pre();
+					another_id = (*so2p_map)[another_id];
+					if(valid_ans.bsearch_uporder(another_id)== -1 )
+						it = this->current_table.erase(it);
+					else
+						it++;
 				}
-				it++;
 			}
 			else
 			{
@@ -585,7 +599,7 @@ Join::copyToResult()
 			//only add selected ones
 			int pre_var_id = this->pos2id[i] - this->var_num;
 			int pvpos = this->basic_query->getSelectedPreVarPosition(pre_var_id);
-			if(pvpos >= 0)
+			if (pvpos >= 0)
 			{
 				this->record[pvpos] = (*it)[i];
 			}
@@ -621,7 +635,7 @@ Join::copyToResult()
 					int pre_var_id = this->basic_query->getPreVarID(predicate);
 					//if(this->basic_query->isPreVarSelected(pre_var_id))
 					//{
-					preid = (*it)[this->id2pos[pre_var_id+this->var_num]];
+					preid = (*it)[this->id2pos[pre_var_id + this->var_num]];
 					//}
 				}
 				else if (preid == -1)  //INVALID_PREDICATE_ID
@@ -634,7 +648,7 @@ Join::copyToResult()
 				{
 					//if(preid < 0)
 					//{
-						//this->kvstore->getobjIDlistBysubID(ele, idlist, idlist_len, true);
+					//this->kvstore->getobjIDlistBysubID(ele, idlist, idlist_len, true);
 					//}
 					//else
 					//{
@@ -645,7 +659,7 @@ Join::copyToResult()
 				{
 					//if(preid < 0)
 					//{
-						//this->kvstore->getsubIDlistByobjID(ele, idlist, idlist_len, true);
+					//this->kvstore->getsubIDlistByobjID(ele, idlist, idlist_len, true);
 					//}
 					//else
 					//{
@@ -653,7 +667,7 @@ Join::copyToResult()
 					//}
 				}
 
-				if(idlist_len == 0)
+				if (idlist_len == 0)
 				{
 					valid = false;
 					break;
@@ -663,7 +677,7 @@ Join::copyToResult()
 				//cout<<"push a new satellite in"<<endl;
 #endif
 			}
-			if(!valid)
+			if (!valid)
 			{
 				break;
 			}
@@ -672,7 +686,7 @@ Join::copyToResult()
 		//cout<<"satellites all prepared!"<<endl;
 #endif
 		int size = satellites.size();
-		if(valid)
+		if (valid)
 		{
 			this->cartesian(0, size);
 		}
@@ -725,7 +739,7 @@ void
 Join::toStartJoin()
 {
 	cout << "to Start Join var num = " << this->var_num << endl;
-	for (int i = 0; i < this->var_num; ++i)	
+	for (int i = 0; i < this->var_num; ++i)
 		this->basic_query->determine_prefilled_var(i);
 
 	for (int i = 0; i < this->var_num; ++i)
@@ -736,7 +750,7 @@ Join::toStartJoin()
 		}
 	}
 
-	cout << "toStartJoin(): need to prepare a ready node"<<endl;
+	cout << "toStartJoin(): need to prepare a ready node" << endl;
 
 	int maxi = -1;
 	double max = 0;
@@ -783,12 +797,12 @@ Join::toStartJoin()
 		//cout<<"predicate id: "<<predicate_id<<endl<<this->kvstore->getPredicateByID(predicate_id)<<endl;
 		//for(int sb = 0; sb < object_list_len; ++sb)
 		//{
-			//cout<<object_list[sb]<<" ";
+		//cout<<object_list[sb]<<" ";
 		//}
 		//cout<<endl;
 		this_edge_literal_list.unionList(object_list, object_list_len, true);
 		delete[] object_list;
-		cout<<"preid: "<<predicate_id<<" length: "<<object_list_len<<" literals: "<<this_edge_literal_list.size()<<endl;
+		cout << "preid: " << predicate_id << " length: " << object_list_len << " literals: " << this_edge_literal_list.size() << endl;
 
 		if (j == 0)
 		{
@@ -799,28 +813,28 @@ Join::toStartJoin()
 			literal_candidate_list.intersectList(this_edge_literal_list);
 		}
 	}
-	
+
 	//a special case is a star graph, where all pres are vars
-	if(!flag) 
+	if (!flag)
 	{
-		cout<<"Special Case: star graph whose pres are all var"<<endl;
+		cout << "Special Case: star graph whose pres are all var" << endl;
 		//get all literals in this db
-		for(TYPE_ENTITY_LITERAL_ID i = 0; i < this->limitID_entity; ++i)
+		for (TYPE_ENTITY_LITERAL_ID i = 0; i < this->limitID_entity; ++i)
 		{
 			TYPE_ENTITY_LITERAL_ID id = i;
 			string literal = this->kvstore->getEntityByID(id);
-			if(literal == "")
+			if (literal == "")
 			{
 				continue;
 			}
 			//BETTER:cache the whole literal id list to improve the query throughput
 			literal_candidate_list.addID(id);
 		}
-		for(TYPE_ENTITY_LITERAL_ID i = 0; i < this->limitID_literal; ++i)
+		for (TYPE_ENTITY_LITERAL_ID i = 0; i < this->limitID_literal; ++i)
 		{
 			TYPE_ENTITY_LITERAL_ID id = i + Util::LITERAL_FIRST_ID;
 			string literal = this->kvstore->getLiteralByID(id);
-			if(literal == "")
+			if (literal == "")
 			{
 				continue;
 			}
@@ -835,7 +849,7 @@ Join::toStartJoin()
 	//int after_add_literal_candidate_list_len = origin_candidate_list.size();
 	this->basic_query->setReady(var_id);
 
-	cout<<"the prepared var id: "<<var_id<<endl;
+	cout << "the prepared var id: " << var_id << endl;
 	//cout<<"add literals num: "<<literal_candidate_list.size()<<endl;
 	//cout<<"current can size: "<<origin_candidate_list.size()<<endl;
 }
@@ -851,37 +865,37 @@ Join::join()
 	//the smallest candidate list size of the not-satellite vars
 	int id = this->basic_query->getVarID_FirstProcessWhenJoin();
 	unsigned smallest = 0;
-	if(id >= 0)
+	if (id >= 0)
 	{
 		smallest = this->basic_query->getCandidateSize(id);
 	}
 	else
 	{
-		cout<<"error in join() - id < 0"<<endl;
+		cout << "error in join() - id < 0" << endl;
 		return false;
 	}
 	//if(!this->is_literal_var(id) && smallest == 0)
-	if( smallest == 0)
+	if (smallest == 0)
 	{
-		cout<<"join() - already empty"<<endl;
+		cout << "join() - already empty" << endl;
 		return false;  //empty result
 	}
 
 	int id_max = this->basic_query->getVarID_MaxCandidateList();
 	unsigned biggest = 0;
-	if(id_max >= 0)
+	if (id_max >= 0)
 	{
 		biggest = this->basic_query->getCandidateSize(id_max);
 	}
 	else
 	{
-		cout<<"error in join() - id < 0"<<endl;
+		cout << "error in join() - id < 0" << endl;
 		return false;
 	}
 	//if(!this->is_literal_var(id_max) && biggest == 0)
-	if(biggest == 0)
+	if (biggest == 0)
 	{
-		cout<<"join() - already empty"<<endl;
+		cout << "join() - already empty" << endl;
 		return false;  //empty result
 	}
 
@@ -911,17 +925,17 @@ Join::join()
 	/*
 	for (int i = 0; i < this->id_pos; ++i)
 	{
-		IDList* idlist = this->basic_query->fetchVarCand(this->pos2id[i]);
-		if (idlist == NULL)
-			continue;
-		for (TableIterator it0 = this->current_table.begin(); it0 != this->new_start;)
-		{
-			//bsearch_vec_uporder
-			if (!idlist->bsearch_uporder((*it0)[i]))
-				it0 = this->current_table.erase(it0);
-			else
-				it0++;
-		}
+	IDList* idlist = this->basic_query->fetchVarCand(this->pos2id[i]);
+	if (idlist == NULL)
+	continue;
+	for (TableIterator it0 = this->current_table.begin(); it0 != this->new_start;)
+	{
+	//bsearch_vec_uporder
+	if (!idlist->bsearch_uporder((*it0)[i]))
+	it0 = this->current_table.erase(it0);
+	else
+	it0++;
+	}
 	}
 	*/
 
@@ -938,7 +952,7 @@ Join::choose_next_node(int id)
 	for (int i = 0; i < degree; ++i)
 	{
 		int var_id2 = this->basic_query->getEdgeNeighborID(id, i);
-		if(var_id2 == -1)  //not in join, including constant
+		if (var_id2 == -1)  //not in join, including constant
 		{
 			continue;
 		}
@@ -954,7 +968,7 @@ Join::choose_next_node(int id)
 		if (this->dealed_triple[edge_id])
 		{
 #ifdef DEBUG_JOIN
-			cout<<"this triple already dealed: "<<edge_id<<endl;
+			cout << "this triple already dealed: " << edge_id << endl;
 #endif
 			continue;
 		}
@@ -1010,12 +1024,12 @@ Join::update_answer_list(IDList*& valid_ans_list, IDList& _can_list, unsigned* i
 {
 	if (valid_ans_list == NULL)
 	{
-		if(_is_ready)
+		if (_is_ready)
 			valid_ans_list = IDList::intersect(_can_list, id_list, id_list_len);
 		else
 		{
 			valid_ans_list = new IDList();
-			for(int i = 0; i < id_list_len; i++)
+			for (int i = 0; i < id_list_len; i++)
 				valid_ans_list->addID(id_list[i]);
 		}
 
@@ -1044,13 +1058,13 @@ bool
 Join::join_two(vector< vector<int> >& _edges, IDList& _can_list, unsigned _can_list_size, int _id, bool _is_ready)
 {
 	//if(_can_list_size == 0 && !_is_literal)
-	if(_can_list_size == 0 && _is_ready)
+	if (_can_list_size == 0 && _is_ready)
 	{
 		return false;   //empty result
 	}
 	bool found = false;
 	bool if_new_start = false; //the first to add to end in while
-	for(TableIterator it0 = this->current_table.begin(); it0 != this->new_start;)
+	for (TableIterator it0 = this->current_table.begin(); it0 != this->new_start;)
 	{
 #ifdef DEBUG_JOIN
 		if (this->new_start != this->current_table.end())
@@ -1105,7 +1119,7 @@ Join::join_two(vector< vector<int> >& _edges, IDList& _can_list, unsigned _can_l
 			bool exist_constant_pre = false;
 			bool s2o_pre_var = false;
 			bool o2s_pre_var = false;
-			for(vector<int>::iterator it2 = edge_index.begin(); it2 != edge_index.end(); ++it2)
+			for (vector<int>::iterator it2 = edge_index.begin(); it2 != edge_index.end(); ++it2)
 			{
 				int edge_type = this->basic_query->getEdgeType(_id, *it2);
 				TYPE_PREDICATE_ID pre_id = this->basic_query->getEdgePreID(_id, *it2);
@@ -1125,9 +1139,9 @@ Join::join_two(vector< vector<int> >& _edges, IDList& _can_list, unsigned _can_l
 #endif
 					continue;
 				}
-				else if(pre_id >= 0)
+				else if (pre_id >= 0)
 				{
-					if(!exist_constant_pre)
+					if (!exist_constant_pre)
 					{
 						exist_constant_pre = true;
 					}
@@ -1181,18 +1195,18 @@ Join::join_two(vector< vector<int> >& _edges, IDList& _can_list, unsigned _can_l
 				}
 			}
 
-			if(!matched)
+			if (!matched)
 			{
 				break;
 			}
-			if(exist_constant_pre)
+			if (exist_constant_pre)
 			{
 				//NOTICE: this means there exists constant pre in parallel edges, so update_answer_list has already been used
 				//in this case, later we needn't do s2o_pre_var or o2s_pre_var because sp2o and op2s is more precise
 				continue;
 			}
 			//all pres are variable, so use s2o or o2s to add
-			if(s2o_pre_var)
+			if (s2o_pre_var)
 			{
 				unsigned* id_list2;
 				unsigned id_list2_len;
@@ -1205,7 +1219,7 @@ Join::join_two(vector< vector<int> >& _edges, IDList& _can_list, unsigned _can_l
 					break;
 				}
 			}
-			if(o2s_pre_var)
+			if (o2s_pre_var)
 			{
 				unsigned* id_list2;
 				unsigned id_list2_len;
@@ -1356,7 +1370,7 @@ Join::multi_join()
 #endif
 
 		vector< vector<int> > edges; //the edge index for table column in id2
-						   // the outer is node-loop, inner is canlist-loop
+									 // the outer is node-loop, inner is canlist-loop
 		vector< vector<int*> > id_lists;
 		vector< vector<int> > id_lists_len;
 		//int* tmp_id_list;
@@ -1392,23 +1406,23 @@ Join::multi_join()
 		bool is_literal = this->is_literal_var(id2);
 		if(is_literal)
 		{
-#ifdef DEBUG_PRECISE
-			cout << "this var may contain literals: " << id2 << endl;
-#endif
-			this->basic_query->setReady(id2);
+		#ifdef DEBUG_PRECISE
+		cout << "this var may contain literals: " << id2 << endl;
+		#endif
+		this->basic_query->setReady(id2);
 		}
 		else
 		{
-#ifdef DEBUG_PRECISE
-			cout << "this var not contain literals: " << id2 << endl;
-#endif
+		#ifdef DEBUG_PRECISE
+		cout << "this var not contain literals: " << id2 << endl;
+		#endif
 		}
 		*/
 		bool flag = false;
 #ifdef DEBUG_PRECISE
-			cout << "this edge uses not-prepared-join way" << endl;
+		cout << "this edge uses not-prepared-join way" << endl;
 #endif
-			flag = this->join_two(edges, can_list, can_list_size, id2, this->basic_query->isReady(id2));
+		flag = this->join_two(edges, can_list, can_list_size, id2, this->basic_query->isReady(id2));
 
 		//if current_table is empty, ends directly
 		if (!flag)
@@ -1423,7 +1437,7 @@ Join::multi_join()
 		for (int i = 0; i < this->id_pos; ++i)
 		{
 			vector<int> edge_index = edges[i];
-			for(vector<int>::iterator it = edge_index.begin(); it != edge_index.end(); ++it)
+			for (vector<int>::iterator it = edge_index.begin(); it != edge_index.end(); ++it)
 			{
 				int edge_id = this->basic_query->getEdgeID(id2, *it);
 				dealed_triple[edge_id] = true;
@@ -1548,7 +1562,7 @@ Join::constant_edge_filter(int _var_i)
 
 		//NOTICE: this is another case, vars not in join, we only need constants
 		bool only_preid_filter = (this->basic_query->isOneDegreeNotJoinVar(neighbor_name));
-		if(only_preid_filter)
+		if (only_preid_filter)
 		{
 			continue;
 		}
@@ -1676,14 +1690,14 @@ Join::add_literal_candidate()
 			continue;
 		}
 
-		if(this->basic_query->isSatelliteInJoin(i))
+		if (this->basic_query->isSatelliteInJoin(i))
 		{
 			continue;
 		}
 
 		// for these literal variable without any linking entities(we call free literal variable),
 		// we will add their literal candidates when join-step.
-		if(this->basic_query->isFreeLiteralVariable(i))
+		if (this->basic_query->isFreeLiteralVariable(i))
 		{
 			continue;
 		}
@@ -1761,7 +1775,7 @@ Join::add_literal_candidate()
 
 		// this variable's literal candidates have been added.
 		//this->basic_query->setAddedLiteralCandidate(var_id);
-		if(flag)
+		if (flag)
 		{
 			this->basic_query->setReady(var_id);
 		}
@@ -1814,11 +1828,11 @@ Join::allFilterByPres()
 {
 	//NOTICE:this check is a must to ensure that we can get all right answers
 	//for core vertices after join, then we can generate satellites directly
-	for(int i = 0; i < this->var_num; ++i)
+	for (int i = 0; i < this->var_num; ++i)
 	{
-		if(this->basic_query->isSatelliteInJoin(i))
+		if (this->basic_query->isSatelliteInJoin(i))
 			continue;
-		if(this->preFilter(i) == false)
+		if (this->preFilter(i) == false)
 			return false;
 	}
 	return true;
@@ -1838,7 +1852,7 @@ Join::preFilter(int _var)
 	//result if already empty for non-literal variable
 	if (size == 0)
 	{
-		if(!is_literal_var(_var))
+		if (!is_literal_var(_var))
 			return false;
 		else
 			return true;
@@ -1865,7 +1879,7 @@ Join::preFilter(int _var)
 		}
 
 		//not consider edge with constant neighbors here
-		if(neighbor[0] != '?')
+		if (neighbor[0] != '?')
 		{
 			//cout << "not to filter: " << neighbor_name << endl;
 			continue;
@@ -1888,11 +1902,11 @@ Join::preFilter(int _var)
 		//The latter time is computed due to the unnecessary copy cost if not using this p
 		TYPE_TRIPLE_NUM border = size / (Util::logarithm(2, size) + 1);
 		//not use inefficient pre to filter
-		if(this->dealed_triple[triple_id] || this->pre2num[pre_id] > border)
+		if (this->dealed_triple[triple_id] || this->pre2num[pre_id] > border)
 		{
 			continue;
 		}
-		if(this->basic_query->isOneDegreeVar(neighbor))
+		if (this->basic_query->isOneDegreeVar(neighbor))
 		{
 			this->dealed_triple[triple_id] = true;
 		}
@@ -1916,15 +1930,15 @@ Join::preFilter(int _var)
 	set<TYPE_PREDICATE_ID>::iterator it;
 	unsigned* list = NULL;
 	unsigned len = 0;
-	for(it = in_edge_pre_id.begin(); it != in_edge_pre_id.end(); ++it)
+	for (it = in_edge_pre_id.begin(); it != in_edge_pre_id.end(); ++it)
 	{
 		this->kvstore->getobjIDlistBypreID(*it, list, len, true);
 		cans.intersectList(list, len);
 		delete[] list;
 	}
-	if(!cans.empty())
+	if (!cans.empty())
 	{
-		for(it = out_edge_pre_id.begin(); it != out_edge_pre_id.end(); ++it)
+		for (it = out_edge_pre_id.begin(); it != out_edge_pre_id.end(); ++it)
 		{
 			this->kvstore->getsubIDlistBypreID(*it, list, len, true);
 			cans.intersectList(list, len);
@@ -1933,9 +1947,9 @@ Join::preFilter(int _var)
 	}
 
 	//this is a core vertex, so if not literal var, exit when empty
-	if(!is_literal_var(_var) && cans.empty())
+	if (!is_literal_var(_var) && cans.empty())
 	{
-	    return false;
+		return false;
 	}
 
 	cout << "var " << _var << "size after pre_filter " << cans.size() << endl;
@@ -1971,7 +1985,7 @@ Join::only_pre_filter_after_join()
 			int triple_id = this->basic_query->getEdgeID(var_id, i);
 			Triple triple = this->basic_query->getTriple(triple_id);
 			//this is a pre var
-			if(triple.predicate[0] == '?')
+			if (triple.predicate[0] == '?')
 			{
 				continue;
 			}
@@ -2014,7 +2028,7 @@ Join::only_pre_filter_after_join()
 		}
 		//cout<<"checkpoint1"<<endl;
 
-		if(in_edge_pre_id.empty() && out_edge_pre_id.empty())
+		if (in_edge_pre_id.empty() && out_edge_pre_id.empty())
 		{
 			continue;
 		}
@@ -2099,12 +2113,12 @@ Join::FillVarCand(const string &_var, const vector<unsigned> &_id_list)
 	this->basic_query->fillVarCand(_var, _id_list);
 }
 void
-Join::FillVarCand(int _var_id,const IDList* _id_list)
+Join::FillVarCand(int _var_id, const IDList* _id_list)
 {
-	this->basic_query->fillVarCand( _var_id,  _id_list);
+	this->basic_query->fillVarCand(_var_id, _id_list);
 }
-void 
+void
 Join::FillVarCand(int _var_id, const vector<unsigned> &_id_list)
 {
-	this->basic_query->fillVarCand( _var_id, _id_list);
+	this->basic_query->fillVarCand(_var_id, _id_list);
 }
