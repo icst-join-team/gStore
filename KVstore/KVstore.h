@@ -231,7 +231,8 @@ private:
 	static unsigned short buffer_oID2values_query;
 	static unsigned short buffer_pID2values_query;
 
-
+	map<unsigned int, unsigned int> *subobjid2pre;
+	map<unsigned int, unsigned int> *preid2subobj;
 	//===============================================================================
 
 	bool open(SITree* & _p_btree, std::string _tree_name, int _mode, unsigned long long _buffer_size);

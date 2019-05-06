@@ -2845,21 +2845,23 @@ KVstore::getPreListSize(TYPE_PREDICATE_ID _pre_id)
 	return _ret;
 }
 
-void fillmap_pre2so(map<unsigned int, unsigned int> *filled_preid2subobj)
+void 
+KVstore::fillmap_pre2so(map<unsigned int, unsigned int> *filled_preid2subobj)
 {
 	this->preid2subobj = filled_preid2subobj;
 }
 
-void fillmap_so2pre(map<unsigned int, unsigned int> *fulled_subobjid2pre)
+void 
+KVstore::fillmap_so2pre(map<unsigned int, unsigned int> *fulled_subobjid2pre)
 {
 	this->subobjid2pre = fulled_subobjid2pre;
 }
 
-map<unsigned int, unsigned int> * getmap_pre2so()
+map<unsigned int, unsigned int> * KVstore::getmap_pre2so()
 {
 	return this->preid2subobj;
 }
-map<unsigned int, unsigned int> * getmap_so2pre()
+map<unsigned int, unsigned int> * KVstore::getmap_so2pre()
 {
 	return this->subobjid2pre;
 }
