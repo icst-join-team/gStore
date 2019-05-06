@@ -209,7 +209,7 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 	        {
 	            neighbor_name = triple.object;
 	        }
-	        else if(dge_type == Util::EDGE_IN)
+	        else if(edge_type == Util::EDGE_IN)
 	        {
 	            neighbor_name = triple.subject;
 	        }
@@ -559,7 +559,7 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 	{
 		if (basic_query->fetchVarCand(_var_i) != NULL)
 			continue;
-		if (!basic_query->isVarBothPre_so(_var))
+		if (!basic_query->isVarBothPre_so(_var_i))
 			continue;
 
 		int var_degree = basic_query->getVarDegree(_var_i);
@@ -615,7 +615,7 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 			map<unsigned int, unsigned int> *map_pre2so = this->kvstore->getmap_pre2so();
 			for (int id_i = 0; id_i < id_list_len; id_i++)
 			{
-				id_list[i] = (*map_pre2so)[id_list_pre[i]];
+				id_list[id_i] = (*map_pre2so)[id_list_pre[id_i]];
 			}
 			delete[] id_list_pre;
 		
