@@ -75,7 +75,7 @@ BasicQuery::fillVarCand(const string &_var, const vector<unsigned> &_id_list)
 {
 	int _var_id = getIDByVarName(_var);
 	if (isSatelliteInJoin(_var_id)) 
-		retrun;
+		return;
 	this->filled_candidate_list[_var_id] = new IDList();
 	this->filled_candidate_list[_var_id]->copy(_id_list);
 
@@ -84,7 +84,7 @@ void
 BasicQuery::fillVarCand(int _var_id, const IDList* _id_list)
 {
 	if (isSatelliteInJoin(_var_id)) 
-		retrun;
+		return;
 	this->filled_candidate_list[_var_id] = new IDList();
 	this->filled_candidate_list[_var_id]->copy(_id_list);
 
@@ -93,7 +93,7 @@ void
 BasicQuery::fillVarCand(int _var_id, const vector<unsigned> &_id_list)
 {
 	if (isSatelliteInJoin(_var_id)) 
-		retrun;
+		return;
 	this->filled_candidate_list[_var_id] = new IDList;
 	cout << this->filled_candidate_list[_var_id] << endl;
 	this->filled_candidate_list[_var_id]->copy(_id_list);
@@ -1105,7 +1105,7 @@ BasicQuery::buildTuple2Freq()
 	vector<Triple>::iterator itr_pre = this->triple_vt.begin();
 	while (itr_pre != this->triple_vt.end())
 	{
-		pre_string_now.insert(_t.predicate);
+		pre_string_now.insert((*itr_pre).predicate);
 		itr_pre++;
 	}
 
