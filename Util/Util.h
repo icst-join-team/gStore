@@ -280,7 +280,7 @@ public:
 	//static const TYPE_TRIPLE_NUM TRIPLE_NUM_MAX = (long long)10000*1000*1000;
 	static const char EDGE_IN = 'i';
 	static const char EDGE_OUT= 'o';
-
+	static const char EDGE_PRE = 'p';
 	//In order to differentiate the sub-part and literal-part of object
 	//let subid begin with 0, while literalid begins with LITERAL_FIRST_ID 
 	//used in Database and Join
