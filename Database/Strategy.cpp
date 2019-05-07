@@ -562,21 +562,17 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 		if (!basic_query->isVarBothPre_so(_var_i))
 			continue;
 
+		string pre_name = basic_query->getVarName(_var_i);
 		int var_degree = basic_query->getVarDegree(_var_i);
+		vector<Triple> pre_triple = basic_query->GetTripleByPredicate(pre_name);
+
 		IDList &_list = basic_query->getCandidateList(_var_i);
-		cout << "\tVar" << _var_i << " " << basic_query->getVarName(_var_i) << endl;
+		cout << "\tVar" << _var_i << " " << pre_name << endl;
 
-		for (int j = 0; j < var_degree; j++)
+		for (int j = 0; j < pre_triple.size() ; j++)
 		{
-
-			char edge_type = basic_query->getEdgeType(_var_i, j);
-			int triple_id = basic_query->getEdgeID(_var_i, j);
-			Triple triple = basic_query->getTriple(triple_id);
-			string sub = triple.subject;
-			string obj = triple.object;
-
-			if (edge_type != Util::EDGE_PRE)			
-				continue;
+			string sub = pre_triple[j].subject;
+			string obj = pre_triple[j].object;
 
 			TYPE_ENTITY_LITERAL_ID sub_id = (kvstore)->getIDByEntity(sub);
 			if (sub_id == INVALID_ENTITY_LITERAL_ID)
@@ -641,30 +637,6 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 		}
 		// skip pre_filter when the candidate of a variable is small
 		// enough after constant_filter
-
-		if (_list.size() > 0)
-		{
-			for (int j = 0; j < var_degree; j++)
-			{
-				int neighbor_id = basic_query->getEdgeNeighborID(_var_i, j);
-				//-1: constant or variable not in join; otherwise, variable in join
-				if (neighbor_id == -1)
-				{
-					continue;
-				}
-				TYPE_PREDICATE_ID pre_id = basic_query->getEdgePreID(_var_i, j);
-				char edge_type = basic_query->getEdgeType(_var_i, j);
-				int estimate_val;
-				if (edge_type == Util::EDGE_OUT)
-					estimate_val = _list.size()*pre2num[pre_id] / pre2sub[pre_id];
-				else
-					estimate_val = _list.size()*pre2num[pre_id] / pre2obj[pre_id];
-				if (estimate_val < estimate_num[neighbor_id])
-					estimate_num[neighbor_id] = estimate_val;
-
-			}
-
-		}
 
 		cout << "\t\t[" << _var_i << "] after constant filter, candidate size = " << _list.size() << endl << endl << endl;
 	}
