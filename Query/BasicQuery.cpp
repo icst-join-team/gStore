@@ -1370,3 +1370,15 @@ BasicQuery::isVarBothPre_so(string  _var)
 		return true;
 	return false;
 }
+vector<Triple>
+BasicQuery::GetTripleByPredicate(const string _predicate)
+{
+	vector<Triple>::iterator itr = this->triple_vt.begin();
+	vector<Triple> ans;
+	while (itr != this->triple_vt.end())
+	{
+		if ((*itr).getPredicate() == _predicate)
+			ans.push_back(*itr);
+	}
+	return ans;
+}

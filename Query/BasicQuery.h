@@ -320,6 +320,7 @@ public:
 
 	bool isVarBothPre_so(int _var);
 	bool isVarBothPre_so(string  _var);
+	vector<Triple> GetTripleByPredicate(const string _predicate);
 };
 
 #endif //_QUERY_BASICQUERY_H
