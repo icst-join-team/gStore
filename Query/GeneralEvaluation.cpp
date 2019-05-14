@@ -125,11 +125,12 @@ bool GeneralEvaluation::doQuery()
 		return false;
 	}
 
+	/*
 	if (this->query_tree.getGroupPattern().group_pattern_subject_object_maximal_varset.hasCommonVar(this->query_tree.getGroupPattern().group_pattern_predicate_maximal_varset))
 	{
 		printf("[ERROR]	There are some vars occur both in subject/object and predicate.\n");
 		return false;
-	}
+	}*/
 
 	this->strategy = Strategy(this->kvstore, this->vstree, this->pre2num,this->pre2sub, this->pre2obj, 
 		this->limitID_predicate, this->limitID_literal, this->limitID_entity);
@@ -598,8 +599,8 @@ TempResultSet* GeneralEvaluation::rewritingBasedQueryEvaluation(int dep)
 			if (triple_pattern.sub_group_pattern[j].type == QueryTree::GroupPattern::SubGroupPattern::Pattern_type)
 			{
 				for (int k = 0; k < j; k++)
-					if (triple_pattern.sub_group_pattern[k].type == QueryTree::GroupPattern::SubGroupPattern::Pattern_type)
-						if (triple_pattern.sub_group_pattern[j].pattern.subject_object_varset.hasCommonVar(triple_pattern.sub_group_pattern[k].pattern.subject_object_varset))
+					//if (triple_pattern.sub_group_pattern[k].type == QueryTree::GroupPattern::SubGroupPattern::Pattern_type)
+						//if (triple_pattern.sub_group_pattern[j].pattern.subject_object_varset.hasCommonVar(triple_pattern.sub_group_pattern[k].pattern.subject_object_varset))
 							triple_pattern.mergePatternBlockID(j, k);
 			}
 
