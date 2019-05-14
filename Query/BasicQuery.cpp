@@ -1379,6 +1379,7 @@ BasicQuery::GetTripleByPredicate(const string _predicate)
 	{
 		if ((*itr).getPredicate() == _predicate)
 			ans.push_back(*itr);
+		itr++;
 	}
 	return ans;
 }
