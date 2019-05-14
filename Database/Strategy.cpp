@@ -638,7 +638,7 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 		// skip pre_filter when the candidate of a variable is small
 		// enough after constant_filter
 
-		cout << "\t\t[" << _var_i << "] after constant filter, candidate size = " << _list.size() << endl << endl << endl;
+		cout << "\t\t[" << _var_i << "] after for pre filter, candidate size = " << _list.size() << endl << endl << endl;
 	}
 
 	return true;
