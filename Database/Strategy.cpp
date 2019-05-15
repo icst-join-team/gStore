@@ -567,8 +567,9 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 		vector<Triple> pre_triple = basic_query->GetTripleByPredicate(pre_name);
 
 		IDList &_list = basic_query->getCandidateList(_var_i);
-		cout << "\tVar" << _var_i << " " << pre_name << endl;
 
+		cout << "\tVar " << _var_i << " " << pre_name << endl;
+		
 		for (int j = 0; j < pre_triple.size() ; j++)
 		{
 			string sub = pre_triple[j].subject;
@@ -607,14 +608,33 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 			}
 
 			//translate pre id_list to Sub/obj id
-			unsigned* id_list = new unsigned[id_list_len];
+			unsigned* id_list_tmp = new unsigned[id_list_len];
 			map<unsigned int, unsigned int> *map_pre2so = this->kvstore->getmap_pre2so();
+			int have_deleted = 0;
 			for (int id_i = 0; id_i < id_list_len; id_i++)
 			{
-				id_list[id_i] = (*map_pre2so)[id_list_pre[id_i]];
+				//cout<<this->kvstore->getPredicateByID(id_list_pre[id_i]) << "--->";
+				//string temp_pre = this->kvstore->getPredicateByID(id_list_pre[id_i]);
+				if (map_pre2so->find(id_list_pre[id_i]) == map_pre2so->end())
+				{
+					have_deleted++;
+					id_list_tmp[id_i] = -1;
+				}
+				else
+					id_list_tmp[id_i] = (*map_pre2so)[id_list_pre[id_i]];
+				//cout << this->kvstore->getEntityByID(id_list[id_i]) << endl;
 			}
 			delete[] id_list_pre;
-		
+
+			id_list_len -= have_deleted;
+			unsigned* id_list = new unsigned[id_list_len];
+			for (int id_i = 0,tcounter = 0; id_i < id_list_len; id_i++,tcounter++)
+			{
+				id_list[id_i] = id_list_tmp[tcounter];
+				if (id_list_tmp[tcounter] == -1)
+					id_i--;
+			}
+			delete[] id_list_tmp;
 
 			//WARN: this may need to check, end directly
 			if (id_list_len == 0)
@@ -635,9 +655,8 @@ Strategy::pre_handler(BasicQuery * basic_query, KVstore * kvstore, TYPE_TRIPLE_N
 				return false;
 			}
 		}
-		// skip pre_filter when the candidate of a variable is small
-		// enough after constant_filter
-
+		if(_list.size()!=0)
+			basic_query->setReady(_var_i);
 		cout << "\t\t[" << _var_i << "] after for pre filter, candidate size = " << _list.size() << endl << endl << endl;
 	}
 
