@@ -111,7 +111,7 @@ void
 BasicQuery::determine_prefilled_var(int _var_id)
 {
 	cout<<"determine_prefilled_var " << _var_id <<"size = "<<this->getCandidateList(_var_id).size() << endl;
-	if (this->filled_candidate_list[_var_idz] == NULL)
+	if (this->filled_candidate_list[_var_id] == NULL)
 		return;
 	// if this is handled in pre filther we should neglect it
 	if (this->isReady(_var_id))
