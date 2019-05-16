@@ -62,8 +62,8 @@ Database::Database()
 
 	this->id_correspondence_file = "id_correspondence.txt";
 	this->exist_id_correspondence_file = this->load_id_correspondence_file();
-	this->kvstore->fillmap_pre2so(this->preid2subobj);
-	this->kvstore->fillmap_so2pre(this->subobjid2pre);
+	this->kvstore->fillmap_pre2so(&this->preid2subobj);
+	this->kvstore->fillmap_so2pre(&this->subobjid2pre);
 
 }
 
@@ -123,8 +123,8 @@ Database::Database(string _name)
 
 	this->id_correspondence_file = "id_correspondence.txt";
 	this->exist_id_correspondence_file = this->load_id_correspondence_file();
-	this->kvstore->fillmap_pre2so(this->preid2subobj);
-	this->kvstore->fillmap_so2pre(this->subobjid2pre);
+	this->kvstore->fillmap_pre2so(&this->preid2subobj);
+	this->kvstore->fillmap_so2pre(&this->subobjid2pre);
 }
 
 //==================================================================================================================================================

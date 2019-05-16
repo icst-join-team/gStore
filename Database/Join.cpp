@@ -313,7 +313,8 @@ Join::pre_var_handler()
 		int pos = this->var_num + i;
 		//if(is_selected)
 		//{
-		this->add_id_pos_mapping(pos);
+		if (!this->basic_query->isVarBothPre_so(pre_var.name))
+			this->add_id_pos_mapping(pos);
 		//}
 		//cout<<"id 1 pos "<<this->id2pos[1]<<endl;
 
@@ -329,7 +330,7 @@ Join::pre_var_handler()
 #endif
 			for (unsigned j = 0; j < triple_num; ++j)
 			{
-				const Triple& triple = this->basic_query->getTriple(pre_var.triples[j]);
+				const Triple& triple = this->basic_query->getTriple(pre_var.triples[j]);	
 				string sub_name = triple.subject;
 				string obj_name = triple.object;
 #ifdef DEBUG_JOIN
@@ -382,6 +383,19 @@ Join::pre_var_handler()
 					{
 						//NOTICE:then this triple is unlinked with others, and it will be viewed as a single query
 						//we already deal with this case in the Strategy module in time
+
+						// if it is a both pre and so point ,we should fill the id_list to pass the check proceduce
+						bool is_Var_so_pre = this->basic_query->isVarBothPre_so(pre_var.name);
+						int var_pre = this->basic_query->getIDByVarName(pre_var.name);
+						int so_id = (*it)[this->id2pos[var_pre]];
+						map<unsigned int, unsigned int> *so2pre = this->kvstore->getmap_so2pre();
+						bool is_id_so_pre = (so2pre->find(so_id) != so2pre->end());
+						if (is_Var_so_pre && is_id_so_pre)
+						{
+							id_list = new unsigned int[1];
+							id_list_len = 1;
+							id_list[0] = (*so2pre)[so_id];
+						}
 					}
 					else if (var1 == -1 && var2 != -1)
 					{
@@ -406,6 +420,9 @@ Join::pre_var_handler()
 					else if (var1 != -1 && var2 == -1)
 					{
 						this->kvstore->getpreIDlistBysubID((*it)[this->id2pos[var1]], id_list, id_list_len, true);
+						cout << "getpreIDlistBysubID,sub=" << this->kvstore->getSub((*it)[this->id2pos[var1]]) << endl;
+						for (int ii = 0; ii < id_list_len; ii++)
+							cout << "ii["<<ii<<"] "<<this->kvstore->getPredicateByID(id_list[ii]) << endl;
 					}
 					else if (var1 != -1 && var2 != -1)
 					{
@@ -530,11 +547,18 @@ Join::pre_var_handler()
 					int var_pre = this->basic_query->getIDByVarName(pre_var.name);
 					int another_id = (*it)[this->id2pos[var_pre]];
 					map<unsigned int, unsigned int> *so2p_map = this->kvstore->getmap_so2pre();
-					another_id = (*so2p_map)[another_id];
-					if(valid_ans.bsearch_uporder(another_id)== -1 )
+		
+					//if this is not even a predicate
+					if (so2p_map->find(another_id) == so2p_map->end())
 						it = this->current_table.erase(it);
 					else
-						it++;
+					{
+						another_id = (*so2p_map)[another_id];
+						if (valid_ans.bsearch_uporder(another_id) == -1)
+							it = this->current_table.erase(it);
+						else
+							it++;
+					}
 				}
 			}
 			else
@@ -559,9 +583,9 @@ Join::copyToResult()
 {
 	//copy to result list, adjust the vars order
 	this->result_list->clear();
-	int select_var_num = this->basic_query->getSelectVarNum();
-	int core_var_num = this->basic_query->getRetrievedVarNum();
-	int pre_var_num = this->basic_query->getPreVarNum();
+	int select_var_num = this->basic_query->getSelectVarNum(); 
+	int core_var_num = this->basic_query->getRetrievedVarNum(); 
+	int pre_var_num = this->basic_query->getPreVarNum(); 
 
 	int selected_pre_var_num = this->basic_query->getSelectedPreVarNum();
 	//if (this->id_pos != core_var_num + selected_pre_var_num)
