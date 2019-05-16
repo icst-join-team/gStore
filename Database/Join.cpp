@@ -420,9 +420,9 @@ Join::pre_var_handler()
 					else if (var1 != -1 && var2 == -1)
 					{
 						this->kvstore->getpreIDlistBysubID((*it)[this->id2pos[var1]], id_list, id_list_len, true);
-						cout << "getpreIDlistBysubID,sub=" << this->kvstore->getSub((*it)[this->id2pos[var1]]) << endl;
-						for (int ii = 0; ii < id_list_len; ii++)
-							cout << "ii["<<ii<<"] "<<this->kvstore->getPredicateByID(id_list[ii]) << endl;
+						//cout << "getpreIDlistBysubID,sub=" << this->kvstore->g((*it)[this->id2pos[var1]]) << endl;
+						//for (int ii = 0; ii < id_list_len; ii++)
+						//	cout << "ii["<<ii<<"] "<<this->kvstore->getPredicateByID(id_list[ii]) << endl;
 					}
 					else if (var1 != -1 && var2 != -1)
 					{
