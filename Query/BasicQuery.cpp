@@ -111,7 +111,7 @@ void
 BasicQuery::determine_prefilled_var(int _var_id)
 {
 	cout<<"determine_prefilled_var " << _var_id <<"size = "<<this->getCandidateList(_var_id).size() << endl;
-	if (this->filled_candidate_list[_var_id] == NULL)
+	if (this->filled_candidate_list[_var_idz] == NULL)
 		return;
 	// if this is handled in pre filther we should neglect it
 	if (this->isReady(_var_id))
@@ -410,6 +410,7 @@ BasicQuery::if_need_retrieve(int _var)
 bool
 BasicQuery::isSatelliteInJoin(int _var)
 {
+	if (this->isVarBothPre_so(_var)) return false;
 	return _var >= 0 && _var < this->graph_var_num && !(this->need_retrieve[_var]);
 }
 
@@ -569,7 +570,8 @@ BasicQuery::encodeBasicQuery(KVstore* _p_kvstore, const vector<string>& _query_v
 		string var = _query_var[i];
 		cout<<i<<" "<<var<<endl;
 		int pid = this->getPreVarID(var);
-		if(pid == -1) // not pre var
+		bool is_both_so_pre = this->isVarBothPre_so(var);
+		if(pid == -1 || is_both_so_pre) // not pure pre var
 		{
 			this->selected_var_set.insert(var);
 			//assign id for this var
